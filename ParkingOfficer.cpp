@@ -1,19 +1,20 @@
 #include "ParkingOfficer.hpp"
 
-ParkingOfficer::ParkingOfficer(int officerID, ParkingSpace assignedSpaces[]) {
+ParkingOfficer::ParkingOfficer(int officerID, ParkingSpace assignedSpaces[], int count) {
     this->officerID = officerID;
-    //this->assignedSpaces = assignedSpaces;
-    //TODO: Figure out how data will be passed to array
+    
+    for (int i = 0; i < count; ++i) {
+        this->assignedSpaces[i] = assignedSpaces[i];
+    }
+    this->count = count;
 }
 
 void ParkingOfficer::issueAuthorization(string vehicleLicense) {
-    //parkingAuth[].authorize(vehicleLicense);
-    //TODO: Finish after ParkingAuthorization class has been made
+    parkingAuth.authorize(vehicleLicense);
 }
 
-void ParkingOfficer::assignSpace(int spaceID) {
-    //assignedSpaces[spaceID].occupySpace();
-    //TODO: Figure out best way to pass license
+void ParkingOfficer::assignSpace(int spaceID, string vehicleLicense) {
+    assignedSpaces[spaceID].occupySpace(vehicleLicense);
 }
 
 bool ParkingOfficer::checkSpaceStatus(int spaceID) {

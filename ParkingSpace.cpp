@@ -1,6 +1,13 @@
 #include "ParkingSpace.hpp"
 #include <iostream>
 
+ParkingSpace::ParkingSpace() {
+    spaceID = 0;
+    isOccupied = false;
+    isUnderMaintenance = false;
+    vehicleLicense = "";
+}
+
 ParkingSpace::ParkingSpace(int id) : spaceID(id), isOccupied(false), isUnderMaintenance(false), vehicleLicense("") {}
 
 void ParkingSpace::occupySpace(const std::string& license) {

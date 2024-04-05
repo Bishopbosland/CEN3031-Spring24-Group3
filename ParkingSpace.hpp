@@ -11,6 +11,7 @@ private:
     std::string vehicleLicense; // License number of the vehicle parked (if any)
 
 public:
+    ParkingSpace();
     ParkingSpace(int id);
     void occupySpace(const std::string& license);
     void freeSpace();
