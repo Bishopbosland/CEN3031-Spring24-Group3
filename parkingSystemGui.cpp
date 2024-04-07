@@ -1,106 +1,180 @@
+#include <iostream> 
+#include "ParkingSpace.hpp"
+using namespace std; 
+
+#include <QApplication>
 #include <QWidget>
-#include <QListWidget>
-#include <QLineEdit>
 #include <QPushButton>
+#include <QLabel>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
-#include <QMessageBox>
+#include <vector>
+#include <string>
+
+class ParkingSpace {
+private:
+    int spaceID;
+    bool isOccupied;
+    bool isUnderMaintenance;
+    string vehicleLicense;
+public:
+    ParkingSpace(int id);
+    void occupySpace(const string& license);
+    void freeSpace();
+    void markUnderMaintenance();
+    void markAvailable();
+    bool checkOccupied() const;
+    int getSpaceID() const;
+    string getStatus() const;
+};
+
+ParkingSpace::ParkingSpace(int id) : spaceID(id), isOccupied(false), isUnderMaintenance(false), vehicleLicense("") {}
+
+void ParkingSpace::occupySpace(const string& license) {
+    if (!isOccupied && !isUnderMaintenance) {
+    isOccupied = true;
+    vehicleLicense = license;
+    }
+}
+
+void ParkingSpace::freeSpace() {
+    if (isOccupied) {
+        isOccupied = false;
+        vehicleLicense = "";
+    }
+}
+
+void ParkingSpace::markUnderMaintenance() {
+    if (!isOccupied) {
+        isUnderMaintenance = true;
+    }
+}
+
+void ParkingSpace::markAvailable() {
+    isUnderMaintenance = false;
+}
+
+bool ParkingSpace::checkOccupied() const {
+    return isOccupied;
+}
+
+int ParkingSpace::getSpaceID() const {
+    return spaceID;
+}
+
+string ParkingSpace::getStatus() const {
+    if (isUnderMaintenance) {
+        return "Under Maintenance";
+    } else if (isOccupied) {
+        return "Occupied by " + vehicleLicense;
+    } else {
+        return "Available";
+    }
+}
 
 class ParkingSystemGUI : public QWidget {
     Q_OBJECT
 
 public:
-    ParkingSystemGUI(QWidget* parent = nullptr);
+    ParkingSystemGUI(QWidget *parent = 0)
+    ~ParkingSystemGUI();
+
+private slots: 
+    void occupySpace();
+    void freeSpace();
+    void markMaintenance();
+    void updateStatus();
 
 private:
-    QListWidget* parkingSpaceList;
-    QLineEdit* vehicleLicenseField;
-    QLineEdit* ownerDetailsField;
-    QLineEdit* expirationField;
-    QLineEdit* officeIDField;
-    QListWidget* assignedSpacesList;
-    QListWidget* maintenanceSpaceList;
-
-    QPushButton* issueAuthorizationButton;
-    QPushButton* assignSpaceButton;
-    QPushButton* markMaintenanceButton;
-    QPushButton* markAvailableButton;
-
-private slots:
-    void displaySpaces();
-    void issueAuthorization();
-    void assignSpaceToOfficer();
-    void markSpaceUnderMaintenance();
-    void markSpaceAvailable();
+    vector<ParkingSpace> parkingLot;
+    QVBoxLayout *mainLayout;
+    QLabel *statusLabel;
+    QPushButton *occupyButton;
+    QPushButton *freeButton;
+    QPushButton *maintenanceButton;
+    QPushButton *updateButton;
 };
 
-ParkingSystemGUI::ParkingSystemGUI(QWidget* parent)
-    : QWidget(parent) {
-    QVBoxLayout* layout = new QVBoxLayout(this);
+ParkingSystemGUI::ParkingSystemGUI(QWidget *parent)
+    : QWidget(parent)
+{
+    mainLayout = new QVBoxLayout;
+    setLayout(mainLayout);
 
-    parkingSpaceList = new QListWidget(this);
-    vehicleLicenseField = new QLineEdit(this);
-    ownerDetailsField = new QLineEdit(this);
-    expirationField = new QLineEdit(this);
-    officeIDField = new QLineEdit(this);
-    assignedSpacesList = new QListWidget(this);
-    maintenanceSpaceList = new QListWidget(this);
+    statusLabel = new QLabel;
+    mainLayout->addWidget(statusLabel);
 
-    issueAuthorizationButton = new QPushButton("Issue Authorization", this);
-    assignSpaceButton = new QPushButton("Assign Space to Officer", this);
-    markMaintenanceButton = new QPushButton("Mark Space Under Maintenance", this);
-    markAvailableButton = new QPushButton("Mark Space Available", this);
-
-    layout->addWidget(parkingSpaceList);
-    layout->addWidget(vehicleLicenseField);
-    layout->addWidget(ownerDetailsField);
-    layout->addWidget(expirationField);
-    layout->addWidget(officeIDField);
-    layout->addWidget(assignedSpacesList);
-    layout->addWidget(maintenanceSpaceList);
-    layout->addWidget(issueAuthorizationButton);
-    layout->addWidget(assignSpaceButton);
-    layout->addWidget(markMaintenanceButton);
-    layout->addWidget(markAvailableButton);
-
-    connect(issueAuthorizationButton, &QPushButton::clicked, this, &ParkingSystemGUI::issueAuthorization);
-    connect(assignSpaceButton, &QPushButton::clicked, this, &ParkingSystemGUI::assignSpaceToOfficer);
-    connect(markMaintenanceButton, &QPushButton::clicked, this, &ParkingSystemGUI::markSpaceUnderMaintenance);
-    connect(markAvailableButton, &QPushButton::clicked, this, &ParkingSystemGUI::markSpaceAvailable);
-}
-
-void ParkingSystemGUI::displaySpaces() {
-    // Populate parkingSpaceList, assignedSpacesList, and maintenanceSpaceList
-    // with data from our system
-}
-
-void ParkingSystemGUI::issueAuthorization() {
-    QString vehicleLicense = vehicleLicenseField->text();
-    QString ownerDetails = ownerDetailsField->text();
-    QString expirationDate = expirationField->text();
-
-    if (vehicleLicense.isEmpty() || ownerDetails.isEmpty() || expirationDate.isEmpty()) {
-        QMessageBox::warning(this, "Error", "Please fill in all fields to issue authorization.");
-        return;
+    for (int i = 1; i <= 10; ++i) {
+        parkingLot.emplace_back(i);
     }
 
-    // Implement issuing authorization logic
+    occupyButton = new QPushButton("Occupy Space");
+    connect(occupyButton, &QPushButton::clicked, this, &ParkingSystemGUI::occupySpace);
+    mainLayout->addWidget(occupyButton);
+
+    freeButton = new QPushButton("Free Space");
+    connect(freeButton, &QPushButton::clicked, this, &ParkingSystemGUI::freeSpace);
+    mainLayout->addWidget(freeButton);
+
+    maintenanceButton = new QPushButton("Mark Maintenance");
+    connect(maintenanceButton, &QPushButton::clicked, this, &ParkingSystemGUI::markMaintenance);
+    mainLayout->addWidget(maintenanceButton);
+
+    updateButton = new QPushButton("Update Status");
+    connect(updateButton, &QPushButton::clicked, this, &ParkingSystemGUI::updateStatus);
+    mainLayout->addWidget(updateButton);
 }
 
-void ParkingSystemGUI::assignSpaceToOfficer() {
-    QString officeID = officeIDField->text();
+ParkingSystemGUI::~ParkingSystemGUI()
+{
+}
 
-    if (officeID.isEmpty()) {
-        QMessageBox::warning(this, "Error", "Please enter Office ID to assign space to officer.");
-        return;
+void ParkingSystemGUI::occupySpace() {
+    for (auto& space : parkingLot) {
+        if (!space.checkOccupied()) {
+            space.occupySpace("License Plate");
+            break;
+        }
     }
-
-    // Implement assigning space to officer logic
+    updateStatus();
 }
 
-void ParkingSystemGUI::markSpaceUnderMaintenance() {
-    // Implement marking space under maintenance logic
+void ParkingSystemGUI::freeSpace() {
+    for (auto& space : parkingLot) {
+        if (space.checkOccupied()) {
+            space.freeSpace();
+            break;
+        }
+    }
+    updateStatus();
 }
 
-void ParkingSystemGUI::markSpaceAvailable() {
-    // Implement marking space available logic
+void ParkingSystemGUI::markMaintenance() {
+    for (auto& space : parkingLot) {
+        if (!space.checkOccupied()) {
+            space.markUnderMaintenance();
+            break;
+        }
+    }
+    updateStatus();
 }
+
+void ParkingSystemGUI::updateStatus() {
+    QString statusText;
+    for (const auto& space : parkingLot) {
+        statusText += "Parking Space " + QString::number(space.getSpaceID()) + " is " + QString::fromStdString(space.getStatus()) + ".\n";
+    }
+    statusLabel->setText(statusText);
+}
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    ParkingSystemGUI gui;
+    gui.setWindowTitle("Parking Space Management");
+    gui.show();
+
+    return app.exec();
+}
+
+#include "main.moc"
