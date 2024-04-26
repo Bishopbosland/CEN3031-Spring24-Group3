@@ -1,180 +1,98 @@
-#include <iostream> 
-#include "ParkingSpace.hpp"
-using namespace std; 
+Add-Type -AssemblyName PresentationFramework
+# Define XAML for the GUI
+$xaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Parking Management System" Height="500" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-#include <QApplication>
-#include <QWidget>
-#include <QPushButton>
-#include <QLabel>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <vector>
-#include <string>
 
-class ParkingSpace {
-private:
-    int spaceID;
-    bool isOccupied;
-    bool isUnderMaintenance;
-    string vehicleLicense;
-public:
-    ParkingSpace(int id);
-    void occupySpace(const string& license);
-    void freeSpace();
-    void markUnderMaintenance();
-    void markAvailable();
-    bool checkOccupied() const;
-    int getSpaceID() const;
-    string getStatus() const;
-};
+        <!-- Parking Space List -->
+        <Label Grid.Row="0" Content="Parking Space List" Margin="10"/>
+        <ListBox x:Name="parkingSpaceList" Grid.Row="1" Margin="10"/>
 
-ParkingSpace::ParkingSpace(int id) : spaceID(id), isOccupied(false), isUnderMaintenance(false), vehicleLicense("") {}
 
-void ParkingSpace::occupySpace(const string& license) {
-    if (!isOccupied && !isUnderMaintenance) {
-    isOccupied = true;
-    vehicleLicense = license;
+        <!-- Vehicle License Field -->
+        <Label Grid.Row="2" Content="Vehicle License" Margin="10"/>
+        <TextBox x:Name="vehicleLicenseField" Grid.Row="3" Margin="10"/>
+
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <Button Content="Authorize" Width="100" Margin="5" Click="Authorize_Click"/>
+            <Button Content="Assign Space" Width="100" Margin="5" Click="AssignSpace_Click"/>
+            <Button Content="Mark Maintenance" Width="150" Margin="5" Click="MarkMaintenance_Click"/>
+            <Button Content="Mark Available" Width="150" Margin="5" Click="MarkAvailable_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+
+# Load XAML
+$reader = (New-Object System.Xml.XmlNodeReader $xaml)
+$window = [Windows.Markup.XamlReader]::Load($reader)
+
+
+# Get GUI elements
+$parkingSpaceList = $window.FindName("parkingSpaceList")
+$vehicleLicenseField = $window.FindName("vehicleLicenseField")
+
+
+# Add event handlers
+$window.Add_Loaded({
+    # Initialize parking space list
+    for ($i = 1; $i -le 10; $i++) {
+        [void]$parkingSpaceList.Items.Add("Parking Space $i")
     }
-}
+})
 
-void ParkingSpace::freeSpace() {
-    if (isOccupied) {
-        isOccupied = false;
-        vehicleLicense = "";
-    }
-}
 
-void ParkingSpace::markUnderMaintenance() {
-    if (!isOccupied) {
-        isUnderMaintenance = true;
-    }
-}
+$window.ShowDialog() | Out-Null
 
-void ParkingSpace::markAvailable() {
-    isUnderMaintenance = false;
-}
 
-bool ParkingSpace::checkOccupied() const {
-    return isOccupied;
-}
-
-int ParkingSpace::getSpaceID() const {
-    return spaceID;
-}
-
-string ParkingSpace::getStatus() const {
-    if (isUnderMaintenance) {
-        return "Under Maintenance";
-    } else if (isOccupied) {
-        return "Occupied by " + vehicleLicense;
+# Event handlers
+function Authorize_Click {
+    $license = $vehicleLicenseField.Text
+    if (![string]::IsNullOrWhiteSpace($license)) {
+        # Call parking_authorization.exe with vehicle license as argument
+        $output = & ".\parking_authorization.exe" $license
+        Write-Host $output
     } else {
-        return "Available";
+        Write-Host "Please enter a vehicle license."
     }
 }
 
-class ParkingSystemGUI : public QWidget {
-    Q_OBJECT
 
-public:
-    ParkingSystemGUI(QWidget *parent = 0)
-    ~ParkingSystemGUI();
-
-private slots: 
-    void occupySpace();
-    void freeSpace();
-    void markMaintenance();
-    void updateStatus();
-
-private:
-    vector<ParkingSpace> parkingLot;
-    QVBoxLayout *mainLayout;
-    QLabel *statusLabel;
-    QPushButton *occupyButton;
-    QPushButton *freeButton;
-    QPushButton *maintenanceButton;
-    QPushButton *updateButton;
-};
-
-ParkingSystemGUI::ParkingSystemGUI(QWidget *parent)
-    : QWidget(parent)
-{
-    mainLayout = new QVBoxLayout;
-    setLayout(mainLayout);
-
-    statusLabel = new QLabel;
-    mainLayout->addWidget(statusLabel);
-
-    for (int i = 1; i <= 10; ++i) {
-        parkingLot.emplace_back(i);
+function AssignSpace_Click {
+    $license = $vehicleLicenseField.Text
+    if (![string]::IsNullOrWhiteSpace($license)) {
+        # Call parking_officer.exe with space ID and vehicle license as arguments
+        $output = & ".\parking_officer.exe" $spaceID $license
+        Write-Host $output
+    } else {
+        Write-Host "Please enter a vehicle license."
     }
-
-    occupyButton = new QPushButton("Occupy Space");
-    connect(occupyButton, &QPushButton::clicked, this, &ParkingSystemGUI::occupySpace);
-    mainLayout->addWidget(occupyButton);
-
-    freeButton = new QPushButton("Free Space");
-    connect(freeButton, &QPushButton::clicked, this, &ParkingSystemGUI::freeSpace);
-    mainLayout->addWidget(freeButton);
-
-    maintenanceButton = new QPushButton("Mark Maintenance");
-    connect(maintenanceButton, &QPushButton::clicked, this, &ParkingSystemGUI::markMaintenance);
-    mainLayout->addWidget(maintenanceButton);
-
-    updateButton = new QPushButton("Update Status");
-    connect(updateButton, &QPushButton::clicked, this, &ParkingSystemGUI::updateStatus);
-    mainLayout->addWidget(updateButton);
 }
 
-ParkingSystemGUI::~ParkingSystemGUI()
-{
+
+function MarkMaintenance_Click {
+    # Call parking_space.exe with space ID as argument
+    $output = & ".\parking_space.exe" $spaceID
+    Write-Host $output
 }
 
-void ParkingSystemGUI::occupySpace() {
-    for (auto& space : parkingLot) {
-        if (!space.checkOccupied()) {
-            space.occupySpace("License Plate");
-            break;
-        }
-    }
-    updateStatus();
+
+function MarkAvailable_Click {
+    # Call parking_space.exe with space ID as argument
+    $output = & ".\parking_space.exe" $spaceID
+    Write-Host $output
 }
 
-void ParkingSystemGUI::freeSpace() {
-    for (auto& space : parkingLot) {
-        if (space.checkOccupied()) {
-            space.freeSpace();
-            break;
-        }
-    }
-    updateStatus();
-}
-
-void ParkingSystemGUI::markMaintenance() {
-    for (auto& space : parkingLot) {
-        if (!space.checkOccupied()) {
-            space.markUnderMaintenance();
-            break;
-        }
-    }
-    updateStatus();
-}
-
-void ParkingSystemGUI::updateStatus() {
-    QString statusText;
-    for (const auto& space : parkingLot) {
-        statusText += "Parking Space " + QString::number(space.getSpaceID()) + " is " + QString::fromStdString(space.getStatus()) + ".\n";
-    }
-    statusLabel->setText(statusText);
-}
-
-int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
-
-    ParkingSystemGUI gui;
-    gui.setWindowTitle("Parking Space Management");
-    gui.show();
-
-    return app.exec();
-}
-
-#include "main.moc"
